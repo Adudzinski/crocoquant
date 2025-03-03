@@ -1,3 +1,4 @@
+import os 
 import time
 import numpy as np
 import pandas as pd
@@ -6,6 +7,7 @@ import threading
 from typing import Dict, Optional
 import warnings 
 warnings.filterwarnings("ignore")
+from dotenv import load_dotenv
 
 from ibapi.client import EClient
 from ibapi.wrapper import EWrapper
@@ -14,6 +16,10 @@ from ibapi.order import Order
 from ibapi.common import BarData
 from ib_insync import *
 
+# Load environment variables from .env file
+load_dotenv() #Comment out if default localhost IP is sufficient 
+# Get IP from .env or use default
+IB_IP = os.getenv("IB_IP", "127.0.0.1")
 
 class TradingApp(EClient, EWrapper):
 
@@ -75,7 +81,8 @@ class TradingApp(EClient, EWrapper):
 
 
 app = TradingApp()
-app.connect("127.0.0.1",7497, clientId=1)
+
+app.connect(IB_IP,7497, clientId=1)
 threading.Thread(target=app.run, daemon=True).start()
 
 nvda=TradingApp.get_contract("NVDA")

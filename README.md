@@ -93,4 +93,48 @@ To completely remove the container:
 
     docker rm trading-bot-container
 
+## WSL & Interactive Brokers API: IP Address Issue
+
+When running this bot inside WSL (Windows Subsystem for Linux), the localhost IP (127.0.0.1) will not work to connect to TWS (Trader Workstation). This is because WSL runs in a separate network environment from Windows.
+
+### Issue:
+
+By default, trying to connect using:
+     ib.connect("127.0.0.1", 7497, clientId=1)
+
+may fail with:
+
+     ConnectionRefusedError: [Errno 111] Connect call failed
+
+This happens because WSL needs to connect using the Windows host machine’s IP, not 127.0.0.1.
+
+### Solution: Use Windows IP Instead
+
+1. Find Your Windows IP
+
+Run this in Windows PowerShell:
+
+     ipconfig | findstr /C:"IPv4 Address"
+
+Look for an IP like 192.168.x.x (this is your local network IP).
+
+2. Store IP in .env File
+
+Create a .env file in your project folder:
+     IB_IP=192.168.x.x  # Replace with your actual IP
+
+3. Load IP in Your Python Script
+
+Install python-dotenv if not already installed:
+
+     pip install python-dotenv
+
+### Final Notes
+
+- Every time your Windows IP changes, update the .env file.
+- This setup keeps your IP private while ensuring WSL can connect to TWS.
+- If you're still having issues, check that TWS API settings allow incoming connections (Edit > Global Configuration > API > Settings).
+
+
+
 

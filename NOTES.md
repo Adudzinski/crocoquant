@@ -11,3 +11,5 @@ git push origin main
 
 #Update dependencies in requirements.txt
 pipreqs /path/to/your/project --force
+
+
