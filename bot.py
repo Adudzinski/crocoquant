@@ -1,122 +1,90 @@
-import os 
-import time
-import numpy as np
-import pandas as pd
-from datetime import datetime
-import threading
-from typing import Dict, Optional
-import warnings 
-warnings.filterwarnings("ignore")
-from dotenv import load_dotenv
+import importlib, pathlib, pandas as pd, vectorbt as vbt
+import argparse, os
+from universe import load_universe
+from predictors import mean_reversion  # first and only predictor today
+import yaml, pathlib
+CONFIG = yaml.safe_load(pathlib.Path("config.yaml").read_text())
 
-from ibapi.client import EClient
-from ibapi.wrapper import EWrapper
-from ibapi.contract import Contract
-from ibapi.order import Order
-from ibapi.common import BarData
-from ib_insync import *
 
-# Load environment variables from .env file
-load_dotenv() #Comment out if default localhost IP is sufficient 
-# Get IP from .env or use default
-IB_IP = os.getenv("IB_IP", "127.0.0.1")
+# ----------------------------------------------------------------------
+# 1. Config loader  (YAML  +  CLI / ENV override)
+# ----------------------------------------------------------------------
+def load_config():
+    cfg = yaml.safe_load(pathlib.Path("config.yaml").read_text())
 
-class TradingApp(EClient, EWrapper):
+    # ENV var override
+    if "MODE" in os.environ:
+        cfg["mode"] = os.environ["MODE"]
 
-    def __init__(self) -> None:
-        EClient.__init__(self, self)
-        self.data: Dict[int, pd.Dataframe] = {}
+    # CLI override
+    parser = argparse.ArgumentParser(description="Daily quant-bot")
+    parser.add_argument("--mode", choices=["backtest", "live"],
+                        help="Run in backtest or live mode")
+    args, _ = parser.parse_known_args()
+    if args.mode:
+        cfg["mode"] = args.mode
 
-    def error(self, reqId: int, errorCode: int, errorString: str, advanced: dict ={}):# -> None:
-        print(f"Error: {reqId}, {errorCode}, {errorString}")
+    return cfg
 
-    def nextValidId(self, orderId: int) -> None:
-        super().nextValidId(orderId)
-        self.nextOrderId = orderId
 
-    def get_historical_data(self, reqId: int, contract: Contract) -> pd.DataFrame:
-        self.data[reqId] = pd.DataFrame(columns=["time", "high", "low", "close"])
-        self.data[reqId].set_index("time", inplace=True)
-        self.reqHistoricalData(
-            reqId=reqId,
-            contract=contract,
-            endDateTime="",
-            durationStr="1 D",
-            barSizeSetting="1 min",
-            whatToShow="MIDPOINT",
-            useRTH=0,
-            formatDate=2,
-            keepUpToDate=False,
-            chartOptions=[],
+CONFIG = load_config()          # global dict
+
+
+# ----------------------------------------------------------------------
+# 2. Helpers
+# ----------------------------------------------------------------------
+def get_data(tickers):
+    """Download daily close data."""
+    return vbt.YFData.download(
+        tickers,
+        start=str(CONFIG["start"])
+    ).get("Close")
+
+
+def run_predictors(price_df: pd.DataFrame) -> pd.Series:
+    """Aggregate probabilities from all predictors (mean today)."""
+    preds = [
+        mean_reversion.predict(
+            price_df,
+            CONFIG["lookback_ma"],
+            CONFIG["z_entry"]
         )
-        time.sleep(5)
-        return self.data[reqId]
-
-    def historicalData(self, reqId: int, bar: BarData) -> None:
-        df = self.data[reqId]
-        df.loc[
-            pd.to_datetime(bar.date, unit="s"), 
-            ["high", "low", "close"]
-        ] = [bar.high, bar.low, bar.close]
-        df = df.astype(float)
-        self.data[reqId] = df
-
-    @staticmethod
-    def get_contract(symbol: str) -> Contract:
-        contract = Contract()
-        contract.symbol = symbol
-        contract.secType = "STK"
-        contract.exchange = "SMART"
-        contract.currency = "USD"
-        return contract
-
-    def place_order(self, contract: Contract, action: str, order_type: str, quantity: int) -> None:
-        order = Order()
-        order.action = action
-        order.orderType = order_type
-        order.totalQuantity = quantity
-        self.placeOrder(self.nextOrderId, contract, order)
-        self.nextOrderId += 1
-        print("Order placed")
+        # add more predictors here
+    ]
+    return pd.concat(preds, axis=1).mean(axis=1)
 
 
-app = TradingApp()
-
-app.connect(IB_IP,7497, clientId=1)
-threading.Thread(target=app.run, daemon=True).start()
-
-nvda=TradingApp.get_contract("NVDA")
-nvda
-data=app.get_historical_data(99,nvda)
-data
-
-#ib=IB()
-#ib.connect('127.0.0.1', 7497, 1) #Connection does not work
-#stock = Stock('AAPL', 'SMART', 'USD')
+def decide(proba: pd.Series):
+    """Translate probability into entry/exit boolean masks."""
+    buy  = proba > CONFIG["buy_threshold"]
+    sell = proba < CONFIG["sell_threshold"]
+    return buy, sell
 
 
-#bars = ib.reqHistoricalData(
-#    stock,
-#    endDateTime='',
-#    durationStr='1 D',
-#    barSizeSetting='5 mins',
-#    whatToShow='MIDPOINT',
-#    useRTH=True
-#)
+# ----------------------------------------------------------------------
+# 3. Main orchestration
+# ----------------------------------------------------------------------
+def main():
+    basket  = load_universe()
+    tickers = [d["ticker"] for d in basket]
 
-#df = util.df(bars)
-#print(df)
+    price     = get_data(tickers)
+    proba     = run_predictors(price)
+    entries, exits = decide(proba)
 
-#ib.disconnect()
+    if CONFIG["mode"] == "backtest":
+        pf = vbt.Portfolio.from_signals(
+            price,
+            entries,
+            exits,
+            init_cash=CONFIG["cash"],
+            freq="1D"        # enables Sharpe, Sortino, etc.
+        )
+        print(pf.stats())
+    else:
+        # --- LIVE MODE -------------------------------------------------
+        # `entries.iloc[-1]` and `exits.iloc[-1]` contain today's signals
+        from broker import execute_live     # lazy-import; avoids IB deps in back-test
+        execute_live(entries.iloc[-1], exits.iloc[-1], CONFIG)
 
 
-
-#def main():
-#    print("Starting CrocoQuant trading bot...")
-#    while True:
-#        print("Fetching market data...")
-#
-#        time.sleep(5)  # Simulating a trading loop
-#
-#if __name__ == "__main__":
-#    main()

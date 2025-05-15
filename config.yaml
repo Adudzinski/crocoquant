@@ -1,0 +1,9 @@
+mode: live          # backtest | live
+start: "2018-01-01"
+cash: 1000
+buy_threshold: 0.6      # probability > 0.6 → go long
+sell_threshold: 0.4     # probability < 0.4 → flatten
+lookback_ma: 30
+z_entry: 1.5
+log_path: data/logs
+

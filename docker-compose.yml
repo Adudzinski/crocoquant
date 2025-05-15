@@ -1,12 +1,35 @@
-version: '3'
+version: "3.9"
 
 services:
+  ####################################################################
+  # 1) Your bot image
+  ####################################################################
   bot:
     build: .
-    ports:
-      - "8000:8000"
+    image: quant-bot:latest          # reusable tag
+    env_file: .env                   # IB_HOST, IB_PORT, etc.
     volumes:
-      - .:/app
-    environment:
-      - ENV=production
-    command: python bot.py
+      - ./data:/app/data             # keep universe.yaml, logs on host
+    command: ["sleep", "infinity"]   # stay idle; scheduler will exec bot.py
+    restart: unless-stopped
+
+  ####################################################################
+  # 2) Cron side-car that triggers the bot container once a day
+  ####################################################################
+  scheduler:
+    image: alpine:3.20
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # so cron can docker exec
+      - ./logs:/var/log/quantbot                   # host log dir
+    entrypoint: ["/bin/sh", "-c"]
+    #  - install cron & docker-cli
+    #  - set Europe/Berlin TZ (handles DST)
+    #  - write crontab that calls the bot
+    #  - start crond in foreground
+    command: |
+      apk add --no-cache docker-cli tzdata \
+      && cp /usr/share/zoneinfo/Europe/Berlin /etc/localtime \
+      && echo "5 21 * * 1-5 root docker exec quant-bot_bot_1 python /app/bot.py --mode live >> /var/log/quantbot/bot.log 2>&1" > /etc/crontabs/root \
+      && crond -f
+    restart: unless-stopped
+
