@@ -1,6 +1,12 @@
 echo "
 # Ignore environment files
-*.env  
+old/
+*.env 
+model/
+*.bin
+*.h5
+*.pt
+*.json 
 __pycache__/  
 .ipynb_checkpoints/  
 

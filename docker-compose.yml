@@ -29,7 +29,7 @@ services:
     command: |
       apk add --no-cache docker-cli tzdata \
       && cp /usr/share/zoneinfo/Europe/Berlin /etc/localtime \
-      && echo "5 21 * * 1-5 root docker exec quant-bot_bot_1 python /app/bot.py --mode live >> /var/log/quantbot/bot.log 2>&1" > /etc/crontabs/root \
+      && echo "36 20 * * 1-5 root docker exec quant-bot_bot_1 python /app/bot.py --mode live >> /var/log/quantbot/bot.log 2>&1" > /etc/crontabs/root \
       && crond -f
     restart: unless-stopped
 

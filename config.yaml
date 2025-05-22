@@ -1,9 +1,27 @@
-mode: live          # backtest | live
+# ── top-level run settings ────────────────────────────
+mode: backtest                  # backtest | live
 start: "2018-01-01"
-cash: 1000
-buy_threshold: 0.6      # probability > 0.6 → go long
-sell_threshold: 0.4     # probability < 0.4 → flatten
-lookback_ma: 30
-z_entry: 1.5
+cash: 10000
+buy_threshold: 0.5
+sell_threshold: 0.4
 log_path: data/logs
+max_cash_per_trade: 1000
+atr_window: 14                  # 14 day ATR = average true range
+atr_multiplier: 1.5             # Stop loss places at 1.5*ATR below entry price, BACKTEST DOES NOT INCLUDE IT
+
+# ── predictor registry ────────────────────────────────
+predictors:
+  mean_reversion:
+    enabled: true
+    weight: 0.5
+    params:
+      lookback: 30
+      z_entry: 1.5
+
+  momentum:
+    enabled: true            # flip to true to activate
+    weight: 0.50
+    params:
+      lookback: 10
+      clip: 0.15
 
