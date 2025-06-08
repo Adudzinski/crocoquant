@@ -1,6 +1,6 @@
 import pandas as pd
 
-def predict(price: pd.Series, lookback: int, z_entry: float) -> pd.Series:
+def predict(price: pd.DataFrame, lookback: int, z_entry: float) -> pd.DataFrame:
     ma  = price.rolling(lookback).mean()
     std = price.rolling(lookback).std()
     z   = (price - ma) / std

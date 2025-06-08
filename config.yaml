@@ -3,7 +3,7 @@ total_companies_to_trade: 12
 max_per_sector: 4
 
 # ── top-level run settings ────────────────────────────
-mode: backtest                  # backtest | live
+mode: live                # backtest | live
 start: "2018-01-01"
 cash: 10000
 buy_threshold: 0.5
@@ -19,13 +19,13 @@ predictors:
     enabled: true
     weight: 0.5
     params:
-      lookback: 30
+      lookback: 5
       z_entry: 1.5
 
   momentum:
     enabled: true            # flip to true to activate
     weight: 0.50
     params:
-      lookback: 10
+      lookback: 30
       clip: 0.15
 

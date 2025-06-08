@@ -1,3 +1,4 @@
+import numpy as np
 import time
 import importlib, pathlib, pandas as pd, vectorbt as vbt
 from ib_insync import IB, Stock, util, MarketOrder, StopOrder
@@ -5,7 +6,7 @@ from ta.volatility import AverageTrueRange
 from dotenv import load_dotenv
 import argparse, os
 from universe import load_universe
-from predictors import mean_reversion  # first and only predictor today
+from predictors import mean_reversion, momentum  
 import yaml, pathlib
 from predictors import PREDICTORS
 
@@ -160,14 +161,13 @@ def get_recent_ohlcv(ib, symbol):
 
 def execute_live(today_buy, today_sell, cfg):
     """Submit live orders based on today's entry/exit signals."""
-
     ib = IB()
     ib.connect(
         os.getenv("IB_IP", "127.0.0.1"),
         int(os.getenv("IB_PORT", 7497)),
         int(os.getenv("IB_CLIENT_ID", 7))
     )
-
+    ib.reqMarketDataType(3) # Delayed data if live not available
     max_cash = float(cfg.get("max_cash_per_trade", 1000))
     atr_window = int(cfg.get("atr_window", 14))
     atr_mult = float(cfg.get("atr_multiplier", 1.5))
@@ -179,11 +179,15 @@ def execute_live(today_buy, today_sell, cfg):
 
         if today_buy[tkr] and positions.get(tkr, 0) == 0:
             print(f"🔼 Buying {tkr} with ATR stop-loss")
-            
-            # Market price
-            price = ib.reqMktData(contract).last
+            ticker = ib.reqMktData(contract, '', False, False)
             ib.sleep(2)
+
+            # Market price
+            price = ticker.last if ticker.last else ticker.close
             
+            if price is None or np.isnan(price) or price <= 0:
+                print(f"[ERROR] Price for {tkr} is invalid: {price}")
+                continue
             # Quantity
             qty = max(1,int(max_cash / price))
 

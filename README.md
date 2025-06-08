@@ -62,6 +62,9 @@ python bot.py --mode backtest
 1. Start IB Gateway or TWS, enable:  
    **API → ActiveX/Socket**
 
+    Recommended checked options in IB Gateway or TWS:
+   **Add IB_HOST to trusted IPs**
+
 2. Copy `.env.example` → `.env` and set:  
    `IB_HOST`, `IB_PORT`, `IB_CLIENT_ID`
 

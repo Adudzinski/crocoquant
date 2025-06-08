@@ -16,8 +16,8 @@ import pandas as pd
 import numpy as np
 
 def predict(price: pd.DataFrame,
-            lookback: int = 10,
-            clip: float = 0.15) -> pd.Series:
+            lookback: int ,
+            clip: float ) -> pd.DataFrame:
     """
     Parameters
     ----------
@@ -25,9 +25,6 @@ def predict(price: pd.DataFrame,
     lookback : int     number of days for momentum
     clip : float       max abs-return to map linearly
 
-    Returns
-    -------
-    Series indexed by date with values in [0, 1]
     """
 
     # 1) simple N-day % return
@@ -38,7 +35,6 @@ def predict(price: pd.DataFrame,
     #     0      → 0.5
     #    –clip   → 0
     p = (mom / (2 * clip) + 0.5).clip(0, 1)
-
     # 3) fill NaNs (first 'lookback' rows) with neutral 0.5
-    return p.mean(axis=1).fillna(0.5)
+    return p.fillna(0.5)
 
