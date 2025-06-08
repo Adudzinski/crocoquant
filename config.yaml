@@ -1,3 +1,7 @@
+# ── Number of companies to trade/sector ───────────────
+total_companies_to_trade: 12
+max_per_sector: 4
+
 # ── top-level run settings ────────────────────────────
 mode: backtest                  # backtest | live
 start: "2018-01-01"

@@ -43,13 +43,13 @@ Ensure you have the following installed:
 
 ```bash
 # Clone the repo
-git clone https://github.com/<you>/quant-bot.git && cd quant-bot
+git clone https://github.com/adudzinski/crocoquant.git && cd quant-bot
 
 # Install dependencies
 pip install -r requirements.txt
 
 # Build the 12-stock universe
-python -c "import universe; universe.build_universe()"
+python -c universe.py
 
 # Run a back-test
 python bot.py --mode backtest 
@@ -145,16 +145,18 @@ predictors:
 
 Key fields in `config.yaml`:
 
-| Key              | Meaning                        |
-|------------------|--------------------------------|
-| `mode`           | backtest / live                |
-| `start`          | Start date for back-test       |
-| `cash`           | Initial back-test cash         |
-| `lookback_ma`    | Mean-reversion lookback window |
-| `z_entry`        | Z-score entry threshold        |
-| `buy_threshold`  | Buy probability cutoff         |
-| `sell_threshold` | Sell probability cutoff        |
-| `log_path`       | Path for logs                  |
+| Key              | Meaning                               |
+|------------------|---------------------------------------|
+| `total_companies_to_trade` | Total no. stocks in universe|
+| `max_per_sector` | Max stocks per sector in universe     |
+| `mode`           | backtest / live                       |
+| `start`          | Start date for back-test              |
+| `cash`           | Initial back-test cash                |
+| `lookback_ma`    | Mean-reversion lookback window        |
+| `z_entry`        | Z-score entry threshold               |
+| `buy_threshold`  | Buy probability cutoff                |
+| `sell_threshold` | Sell probability cutoff               |
+| `log_path`       | Path for logs                         |
 
 ---
 
