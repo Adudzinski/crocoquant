@@ -160,14 +160,12 @@ Key fields in `config.yaml`:
 
 ## Data Sources
 
-By default, historical prices are downloaded from **Yahoo Finance** via `vectorbt`.
+By default, historical prices are downloaded from **IBKR**, but backtested via `vectorbt`.
 
-To use **IBKR data** instead, modify `get_data()` in `bot.py`.
 
 Notes:
 
 - Requires IB Gateway/TWS running with API enabled
-- Fetches up to 8 years of daily bars
 - Needs IB market data subscriptions (US Equities bundle)
 - Handles duplicates and missing bars
 

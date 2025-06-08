@@ -7,15 +7,23 @@ MAX_PER_SECTOR = 4
 import yfinance as yf
 
 def fetch_mw_top_n(n=200):
-    tickers = pd.read_csv("data/tickers.csv")["ticker"].tolist()
+    tickers = [
+        "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "UNH", "V", "JNJ",
+        "JPM", "XOM", "WMT", "PG", "MA", "HD", "CVX", "LLY", "MRK", "ABBV", "KO",
+        "PEP", "NVO", "BHP", "ASML", "ORCL", "SAP", "TM", "T", "SHEL", "UL", "NESN"
+    ]
     rows = []
     for tkr in tickers[:n]:
-        info = yf.Ticker(tkr).info
-        rows.append(dict(
-            ticker=tkr,
-            sector=info["sector"],
-            mcap=info["marketCap"]
-        ))
+        try:
+            info = yf.Ticker(tkr).info
+            rows.append(dict(
+                ticker=tkr,
+                sector=info["sector"],
+                mcap=info["marketCap"]
+            ))
+        except Exception as e:
+            print(f"[WARN] Failed to fetch {tkr}: {e}")
+    rows = [r for r in rows if r["mcap"] > 0 and r["sector"] != "Unknown"]
     rows.sort(key=lambda r: r["mcap"], reverse=True)
     return rows
 
@@ -45,3 +53,8 @@ def build_universe(save_to="data/universe.yaml"):
 
 def load_universe(path="data/universe.yaml"):
     return yaml.safe_load(open(path))["basket"]
+
+if __name__ == "__main__":
+    build_universe()
+
+
