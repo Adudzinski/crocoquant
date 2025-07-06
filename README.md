@@ -43,7 +43,7 @@ Ensure you have the following installed:
 
 ```bash
 # Clone the repo
-git clone https://github.com/adudzinski/crocoquant.git && cd quant-bot
+git clone https://github.com/adudzinski/crocoquant.git && cd crocoquant
 
 # Install dependencies
 pip install -r requirements.txt
