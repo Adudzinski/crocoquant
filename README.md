@@ -1,5 +1,5 @@
 # crocoquant
-
+**Note:** This project is currently a work in progress. Stay tuned for updates!
 ## Quant-Bot
 
 A once-a-day trading bot that pulls daily prices, combines multiple predictors into buy probabilities, and either:
